@@ -27,6 +27,12 @@ Use the patch given in this repo and mount it into a running container - that al
 
 You may also push that file into your docker image - I didn't as I would like to be able to configure / change things later without having to rebuild the image again.
 
+## Build image
+
+```
+docker build -t my_n8n:latest .
+```
+
 # Change / Add your docker environment variables
 
 Add the following values to your docker environment variables, either in a docker compose or your .env file.
@@ -34,15 +40,23 @@ Add the following values to your docker environment variables, either in a docke
 Make sure to replace the /path/to/your/mount with the path where you mounted the patch at.
 
 ```
-    - NODE_OPTIONS=--require /path/to/your/mount/patch-http-timeouts.js
-    - N8N_HTTP_REQUEST_TIMEOUT=0       # 0 = disable per-request timeout
-    - N8N_HTTP_HEADERS_TIMEOUT=120000  # 2 minutes; must be > keep-alive
-    - N8N_HTTP_KEEPALIVE_TIMEOUT=65000 # 65 seconds
-    # Outbound fetch/undici timeouts
-    - FETCH_HEADERS_TIMEOUT=1800000   # time allowed to receive response headers
-    - FETCH_BODY_TIMEOUT=12000000     # total time allowed to receive the body/stream
-    - FETCH_CONNECT_TIMEOUT=600000    # total time for waiting for a connect
-    - FETCH_KEEPALIVE_TIMEOUT=65000
+      # make sure undici is accessible (if you installed it into /opt/extra in your image)
+      - NODE_PATH=/opt/extra/node_modules
+      - NODE_FUNCTION_ALLOW_EXTERNAL=undici
+
+      # require the patch at node startup
+      - NODE_OPTIONS=--require /opt/patch/patch-http-timeouts.js
+
+      # n8n HTTP / keepalive tuning from the repo
+      - N8N_HTTP_REQUEST_TIMEOUT=0       # 0 = disable per-request timeout
+      - N8N_HTTP_HEADERS_TIMEOUT=120000  # 2 minutes; must be > keep-alive
+      - N8N_HTTP_KEEPALIVE_TIMEOUT=65000 # 65 seconds
+
+      # undici / outbound fetch timeouts
+      - FETCH_HEADERS_TIMEOUT=1800000   # time allowed to receive response headers (ms)
+      - FETCH_BODY_TIMEOUT=12000000     # total time allowed to receive full body/stream (ms)
+      - FETCH_CONNECT_TIMEOUT=600000    # total time for waiting for a connect (ms)
+      - FETCH_KEEPALIVE_TIMEOUT=65000   # keepalive for outbound fetch
 ```
 
 
